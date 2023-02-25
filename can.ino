@@ -4,33 +4,39 @@
 #define redLED 10 //define the LED pins
 #define greenLED 11
 
-char* actNumber =""; //account number
-int pozisyon = 0 ; //keypad position
-double cutsNumber = 0 ; 
-double points = 0 ;
-
-
+char* actNumber ="1234"; //create a password
+int pozisyon = 0; //keypad position
+int trigPin = 13;    // TRIG pin
+int echoPin = 12;    // ECHO pin
 const byte rows = 4; //number of the keypad's rows and columns
 const byte cols = 4;
+float duration_us, distance_cm;
+double cutsNumber = 0 ; 
+double points = 0 ;
+char keyMap [rows] [cols] = { //define the cymbols on the buttons of the keypad
 
-char keyMap [rows] [cols] = 
-{
-  //define the cymbols on the buttons of the keypad
   {'1', '2', '3', 'A'},
   {'4', '5', '6', 'B'},
   {'7', '8', '9', 'C'},
   {'*', '0', '#', 'D'}
 };
 
-byte rowPins [rows] = {1, 2, 3, 4}; //pins of the keypad
-byte colPins [cols] = {5, 6, 7, 8};
+
+byte rowPins [rows] = {2, 3, 4, 5}; //pins of the keypad
+byte colPins [cols] = {6, 7, 8, 9};
 
 Keypad myKeypad = Keypad( makeKeymap(keyMap), rowPins, colPins, rows, cols);
 
 LiquidCrystal lcd (A0, A1, A2, A3, A4, A5); // pins of the LCD. (RS, E, D4, D5, D6, D7)
 
 void setup(){
+// begin serial port
+  Serial.begin (9600);
 
+  // configure the trigger pin to output mode
+  pinMode(trigPin, OUTPUT);
+  // configure the echo pin to input mode
+  pinMode(echoPin, INPUT);
   lcd.begin(16, 2);
   pinMode(redLED, OUTPUT);  //set the LED as an output
   pinMode(greenLED, OUTPUT);
@@ -44,7 +50,7 @@ void loop(){
   lcd.setCursor(0, 0);
   lcd.print("    Welcome");
   lcd.setCursor(0, 1);
-  lcd.print("your number");
+  lcd.print("ENTER YOUR CODE ");
 
   if(whichKey == '*' || whichKey == '#' || whichKey == 'A' ||       //define invalid keys
   whichKey == 'B' || whichKey == 'C' || whichKey == 'D'){
@@ -53,11 +59,26 @@ void loop(){
     setLocked (true);
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("  Invalid Key!");
-    delay(1000);
+    lcd.print("PRESS AND THROW ");
+       // generate 10-microsecond pulse to TRIG pin
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // measure duration of pulse from ECHO pin
+  duration_us = pulseIn(echoPin, HIGH);
+
+  // calculate the distance
+  distance_cm = 0.017 * duration_us;
+
+  // print the value to Serial Monitor
+  Serial.print("distance: ");
+  Serial.print(distance_cm);
+  Serial.println(" cm");
+    delay(800);
     lcd.clear();
   }
-  if(whichKey == password [pozisyon]){
+  if(whichKey == actNumber [pozisyon]){
 
     pozisyon ++;
   }
@@ -65,13 +86,16 @@ void loop(){
     setLocked (false);
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("*** Code:1234 ***");
+    lcd.print("** Code:9999 **");
     delay(3000);
+ 
+
+  delay(200);
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("  Mert Arduino");
+    lcd.print("    THANK YOU");
     lcd.setCursor(0, 1);
-    lcd.print("Tutorial Project");
+    lcd.print("TAKE YOUR POINTS");
     delay(7000);
     lcd.clear();
   }
@@ -87,10 +111,8 @@ void setLocked(int locked){
       digitalWrite(redLED, LOW);
       digitalWrite(greenLED, HIGH);
     }
-
-
-    
-   /* /////////////////////////////////
+  }
+    /* /////////////////////////////////
 
 
 #include <WiFi.h>
